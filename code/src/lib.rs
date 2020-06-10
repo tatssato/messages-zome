@@ -52,4 +52,9 @@ mod my_zome {
     fn get_my_entry(address: Address) -> ZomeApiResult<Option<Entry>> {
         hdk::get_entry(&address)
     }
+
+    #[zome_fn("hc_public")]
+    fn hello() -> ZomeApiResult<String> {
+        Ok("hello!".to_owned())
+    }
 }
