@@ -13,8 +13,8 @@ use strings::*;
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
 pub struct MessageAnchor {
     author: Address,
+    recipient: Address,
     timestamp: u64,
-    receiver: Address,
     message_type: String,
 }
 
@@ -24,6 +24,12 @@ pub struct Message {
     payload: String,
 }
 
+#[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
+pub struct Members {
+    pub sender: Address,
+    pub recipient: Address
+}
+
 impl HolochainEntry for MessageAnchor {
     fn entry_type() -> String {
         MESSAGE_ANCHOR_ENTRY_NAME.to_owned()
@@ -31,11 +37,11 @@ impl HolochainEntry for MessageAnchor {
 }
 
 impl MessageAnchor {
-    fn new(timestamp: u64, receiver: Address, message_type: String) -> Self {
+    fn new(recipient: Address, timestamp: u64, message_type: String) -> Self {
         MessageAnchor {
             author: AGENT_ADDRESS.to_string().into(),
+            recipient,
             timestamp,
-            receiver,
             message_type,
         }
     }
@@ -56,6 +62,22 @@ impl Message {
     }
 }
 
+impl Members {
+    pub fn new(sender: Address, recipient: Address) -> Self {
+        Members {
+            sender,
+            recipient
+        }
+    }
+
+    pub fn blank() -> Self {
+        Members {
+            sender: "".into(),
+            recipient: "".into()
+        }
+    }
+}
+
 pub fn message_definition() -> ValidatingEntryType {
     entry!(
         name: Message::entry_type(),
@@ -71,6 +93,16 @@ pub fn message_definition() -> ValidatingEntryType {
             from!(
                 MessageAnchor::entry_type(),
                 link_type: MESSAGE_ANCHOR_LINK_TYPE,
+                validation_package: || {
+                    hdk::ValidationPackageDefinition::Entry
+                },
+                validation: | _validation_data: hdk::LinkValidationData | {
+                    Ok(())
+                }
+            ),
+            from!(
+                EntryType::AgentId.to_string(),
+                link_type: AUTHOR_MESSAGE_ANCHOR_LINK_TYPE,
                 validation_package: || {
                     hdk::ValidationPackageDefinition::Entry
                 },
